@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
-import { isValidObjectId, Model } from 'mongoose';
+import { Model, mongo } from 'mongoose';
 import { hashPasswordHelper } from '@/helpers/util';
 import aqp from 'api-query-params';
 import mongoose from 'mongoose';
@@ -14,35 +14,33 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class UsersService {
+
   constructor(
     @InjectModel(User.name)
     private userModel: Model<User>,
-    private readonly mailerService: MailerService,
 
+    private readonly mailerService: MailerService
   ) { }
 
   isEmailExist = async (email: string) => {
-    const user = await this.userModel.exists({ email })
+    const user = await this.userModel.exists({ email });
     if (user) return true;
     return false;
   }
+
   async create(createUserDto: CreateUserDto) {
     const { name, email, password, phone, address, image } = createUserDto;
 
     //check email
-    const isExist = await this.isEmailExist(email)
-    if (isExist) {
+    const isExist = await this.isEmailExist(email);
+    if (isExist === true) {
       throw new BadRequestException(`Email đã tồn tại: ${email}. Vui lòng sử dụng email khác.`)
     }
+
     //hash password
-    const hashPassword = await hashPasswordHelper(createUserDto.password)
+    const hashPassword = await hashPasswordHelper(password);
     const user = await this.userModel.create({
-      name,
-      email,
-      password: hashPassword,
-      phone,
-      address,
-      image
+      name, email, password: hashPassword, phone, address, image
     })
     return {
       _id: user._id
@@ -51,7 +49,6 @@ export class UsersService {
 
   async findAll(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
-
     if (filter.current) delete filter.current;
     if (filter.pageSize) delete filter.pageSize;
 
@@ -60,15 +57,25 @@ export class UsersService {
 
     const totalItems = (await this.userModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / pageSize);
+
     const skip = (current - 1) * (pageSize);
 
-    const result = await this.userModel
+    const results = await this.userModel
       .find(filter)
       .limit(pageSize)
       .skip(skip)
       .select("-password")
-      .sort(sort as any)
-    return { result, totalPages };
+      .sort(sort as any);
+
+    return {
+      meta: {
+        current: current, //trang hiện tại
+        pageSize: pageSize, //số lượng bản ghi đã lấy
+        pages: totalPages,  //tổng số trang với điều kiện query
+        total: totalItems // tổng số phần tử (số bản ghi)
+      },
+      results //kết quả query
+    }
   }
 
   findOne(id: number) {
@@ -81,8 +88,7 @@ export class UsersService {
 
   async update(updateUserDto: UpdateUserDto) {
     return await this.userModel.updateOne(
-      { _id: updateUserDto._id }, { ...updateUserDto }
-    );
+      { _id: updateUserDto._id }, { ...updateUserDto });
   }
 
   async remove(_id: string) {
@@ -91,25 +97,25 @@ export class UsersService {
       //delete
       return this.userModel.deleteOne({ _id })
     } else {
-      throw new BadRequestException("Invalid id")
+      throw new BadRequestException("Id không đúng định dạng mongodb")
     }
+
   }
 
   async handleRegister(registerDto: CreateAuthDto) {
     const { name, email, password } = registerDto;
 
     //check email
-    const isExist = await this.isEmailExist(email)
-    if (isExist) {
+    const isExist = await this.isEmailExist(email);
+    if (isExist === true) {
       throw new BadRequestException(`Email đã tồn tại: ${email}. Vui lòng sử dụng email khác.`)
     }
+
     //hash password
-    const hashPassword = await hashPasswordHelper(password)
-    const codeId = uuidv4()
+    const hashPassword = await hashPasswordHelper(password);
+    const codeId = uuidv4();
     const user = await this.userModel.create({
-      name,
-      email,
-      password: hashPassword,
+      name, email, password: hashPassword,
       isActive: false,
       codeId: codeId,
       codeExpired: dayjs().add(5, 'minutes')
@@ -119,19 +125,18 @@ export class UsersService {
     //send email
     this.mailerService.sendMail({
       to: user.email, // list of receivers
-      subject: 'Activate your account at @EMT', // Subject line
-      text: 'welcome', // plaintext body
+      subject: 'Activate your account at @hoidanit', // Subject line
       template: "register",
       context: {
         name: user?.name ?? user.email,
         activationCode: codeId
       }
     })
-
-    //return response
+    //trả ra phản hồi
     return {
       _id: user._id
     }
+
   }
 
   async handleActive(data: CodeAuthDto) {
@@ -164,14 +169,13 @@ export class UsersService {
     const user = await this.userModel.findOne({ email });
 
     if (!user) {
-      throw new BadRequestException("Account does not exist!")
+      throw new BadRequestException("Tài khoản không tồn tại")
     }
-
     if (user.isActive) {
-      throw new BadRequestException("Account has been activated!")
+      throw new BadRequestException("Tài khoản đã được kích hoạt")
     }
 
-    //send email
+    //send Email
     const codeId = uuidv4();
 
     //update user
@@ -179,11 +183,11 @@ export class UsersService {
       codeId: codeId,
       codeExpired: dayjs().add(5, 'minutes')
     })
+
     //send email
     this.mailerService.sendMail({
       to: user.email, // list of receivers
-      subject: 'Activate your account at @EMT', // Subject line
-      text: 'welcome', // plaintext body
+      subject: 'Activate your account at @hoidanit', // Subject line
       template: "register",
       context: {
         name: user?.name ?? user.email,
@@ -198,10 +202,11 @@ export class UsersService {
     const user = await this.userModel.findOne({ email });
 
     if (!user) {
-      throw new BadRequestException("Account does not exist!")
+      throw new BadRequestException("Tài khoản không tồn tại")
     }
 
-    //send email
+
+    //send Email
     const codeId = uuidv4();
 
     //update user
@@ -209,11 +214,11 @@ export class UsersService {
       codeId: codeId,
       codeExpired: dayjs().add(5, 'minutes')
     })
+
     //send email
     this.mailerService.sendMail({
       to: user.email, // list of receivers
-      subject: 'Change your password account at @EMT', // Subject line
-      text: 'welcome', // plaintext body
+      subject: 'Change your password account at @hoidanit', // Subject line
       template: "register",
       context: {
         name: user?.name ?? user.email,
@@ -225,26 +230,28 @@ export class UsersService {
 
   async changePassword(data: ChangePasswordAuthDto) {
     if (data.confirmPassword !== data.password) {
-      throw new BadRequestException("Password and confirm password are incorrect")
+      throw new BadRequestException("Mật khẩu/xác nhận mật khẩu không chính xác.")
     }
 
     //check email
     const user = await this.userModel.findOne({ email: data.email });
 
     if (!user) {
-      throw new BadRequestException("Account does not exist!")
+      throw new BadRequestException("Tài khoản không tồn tại")
     }
+
     //check expire code
     const isBeforeCheck = dayjs().isBefore(user.codeExpired);
 
     if (isBeforeCheck) {
       //valid => update password
-      const newPassword = await hashPasswordHelper(data.password)
+      const newPassword = await hashPasswordHelper(data.password);
       await user.updateOne({ password: newPassword })
       return { isBeforeCheck };
     } else {
       throw new BadRequestException("Mã code không hợp lệ hoặc đã hết hạn")
     }
+
   }
 
 }
