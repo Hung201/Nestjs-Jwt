@@ -1,30 +1,39 @@
-import { Restaurant } from '@/modules/restaurants/schemas/restaurant.schema';
-import { User } from '@/modules/users/schemas/user.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
+import mongoose from 'mongoose';
 
-export type OrderDocument = HydratedDocument<Order>;
+export type OrderDocument = HydratedDocument<Order> & {
+    softDelete(): Promise<Order>;
+};
 
 @Schema({ timestamps: true })
 export class Order {
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Restaurant.name })
-    restaurant: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+    user_id: mongoose.Schema.Types.ObjectId;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
-    user: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: true })
+    restaurant_id: mongoose.Schema.Types.ObjectId;
 
-    @Prop()
+    @Prop({ required: true })
+    total_price: number;
+
+    @Prop({
+        required: true,
+        enum: ['ordered', 'on the way', 'delivered'],
+        default: 'ordered'
+    })
     status: string;
 
-    @Prop()
-    totalPrice: number;
+    @Prop({ default: false })
+    isDeleted: boolean;
 
-    @Prop()
-    orderTime: Date;
-
-    @Prop()
-    deliveryTime: Date;
-
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
+
+OrderSchema.methods.softDelete = async function (): Promise<Order> {
+    this.isDeleted = true;
+    return await this.save();
+};

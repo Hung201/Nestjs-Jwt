@@ -5,21 +5,34 @@ import { Order } from '@/modules/orders/schemas/order.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 
-export type OrderDetailDocument = HydratedDocument<OrderDetail>;
+export type OrderDetailDocument = HydratedDocument<OrderDetail> & {
+    softDelete(): Promise<OrderDetail>;
+};
 
 @Schema({ timestamps: true })
 export class OrderDetail {
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Order.name })
-    order: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true })
+    order_id: mongoose.Schema.Types.ObjectId;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Menu.name })
-    menu: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Menu', required: true })
+    menu_id: mongoose.Schema.Types.ObjectId;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: MenuItem.name })
-    menuItem: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem', required: true })
+    menu_item_id: mongoose.Schema.Types.ObjectId;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: MenuItemOption.name })
-    menuItemOption: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'MenuItemOption', required: true })
+    menu_item_option_id: mongoose.Schema.Types.ObjectId;
+
+    @Prop({ default: false })
+    isDeleted: boolean;
+
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export const OrderDetailSchema = SchemaFactory.createForClass(OrderDetail);
+
+OrderDetailSchema.methods.softDelete = async function (): Promise<OrderDetail> {
+    this.isDeleted = true;
+    return await this.save();
+};

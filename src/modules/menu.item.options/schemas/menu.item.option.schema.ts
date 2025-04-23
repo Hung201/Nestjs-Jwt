@@ -1,26 +1,35 @@
-import { MenuItem } from '@/modules/menu.items/schemas/menu.item.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
+import mongoose from 'mongoose';
 
-export type MenuItemOptionDocument = HydratedDocument<MenuItemOption>;
+export type MenuItemOptionDocument = HydratedDocument<MenuItemOption> & {
+    softDelete(): Promise<MenuItemOption>;
+};
 
 @Schema({ timestamps: true })
 export class MenuItemOption {
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: MenuItem.name })
-    menuItem: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem', required: true })
+    menu_item_id: mongoose.Schema.Types.ObjectId;
 
-    @Prop()
+    @Prop({ required: true })
     title: string;
 
-    @Prop()
-    description: string;
+    @Prop({ required: true })
+    additional_price: number;
 
     @Prop()
-    additionalPrice: number;
+    optional_description: string;
 
-    @Prop()
-    optionalDescription: string;
+    @Prop({ default: false })
+    isDeleted: boolean;
 
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export const MenuItemOptionSchema = SchemaFactory.createForClass(MenuItemOption);
+
+MenuItemOptionSchema.methods.softDelete = async function (): Promise<MenuItemOption> {
+    this.isDeleted = true;
+    return await this.save();
+};
