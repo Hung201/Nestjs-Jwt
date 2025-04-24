@@ -1,4 +1,5 @@
 import { IsMongoId, IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateMenuItemDto {
     @IsNotEmpty({ message: 'Menu ID không được để trống' })
@@ -12,6 +13,7 @@ export class CreateMenuItemDto {
     description: string;
 
     @IsNotEmpty({ message: 'Giá không được để trống' })
+    @Type(() => Number)
     @IsNumber({}, { message: 'Giá phải là số' })
     @Min(0, { message: 'Giá không được âm' })
     base_price: number;

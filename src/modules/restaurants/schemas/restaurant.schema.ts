@@ -20,7 +20,7 @@ export class Restaurant {
     @Prop({ required: true })
     email: string;
 
-    @Prop({ default: 0 })
+    @Prop({ default: 1, min: 1, max: 5 })
     rating: number;
 
     @Prop({ default: false })

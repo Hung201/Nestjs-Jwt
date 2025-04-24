@@ -5,12 +5,24 @@ import { Restaurant } from './schemas/restaurant.schema';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import aqp from 'api-query-params';
+import { Menu } from '../menus/schemas/menu.schema';
+import { MenuItem } from '../menu.items/schemas/menu.item.schema';
+import { MenuItemOption } from '../menu.item.options/schemas/menu.item.option.schema';
+import { Review } from '../reviews/schemas/review.schema';
 
 @Injectable()
 export class RestaurantsService {
   constructor(
     @InjectModel(Restaurant.name)
-    private restaurantModel: Model<Restaurant>
+    private restaurantModel: Model<Restaurant>,
+    @InjectModel(Menu.name)
+    private menuModel: Model<Menu>,
+    @InjectModel(MenuItem.name)
+    private menuItemModel: Model<MenuItem>,
+    @InjectModel(MenuItemOption.name)
+    private menuItemOptionModel: Model<MenuItemOption>,
+    @InjectModel(Review.name)
+    private reviewModel: Model<Review>
   ) { }
 
   async create(createRestaurantDto: CreateRestaurantDto): Promise<Restaurant> {
@@ -67,5 +79,55 @@ export class RestaurantsService {
       { isDeleted: true },
       { new: true }
     );
+  }
+
+  async findOneWithDetails(id: string) {
+    const restaurant = await this.restaurantModel.findById(id);
+    if (!restaurant) {
+      throw new BadRequestException('Restaurant not found');
+    }
+
+    // Get all menus for this restaurant
+    const menus = await this.menuModel.find({ restaurant_id: id, isDeleted: { $ne: true } });
+
+    // Get all menu items for these menus
+    const menuItems = await this.menuItemModel.find({
+      menu_id: { $in: menus.map(menu => menu._id) },
+      isDeleted: { $ne: true }
+    });
+
+    // Get all menu item options for these menu items
+    const menuItemOptions = await this.menuItemOptionModel.find({
+      menu_item_id: { $in: menuItems.map(item => item._id) },
+      isDeleted: { $ne: true }
+    });
+
+    // Get all reviews for this restaurant
+    const reviews = await this.reviewModel.find({
+      restaurant_id: id,
+      isDeleted: { $ne: true }
+    }).populate('user_id');
+
+    // Organize the data
+    const organizedMenus = menus.map(menu => {
+      const menuItemsForMenu = menuItems.filter(item => item.menu_id.toString() === menu._id.toString());
+      const menuItemsWithOptions = menuItemsForMenu.map(item => {
+        const options = menuItemOptions.filter(option => option.menu_item_id.toString() === item._id.toString());
+        return {
+          ...item.toObject(),
+          options
+        };
+      });
+      return {
+        ...menu.toObject(),
+        items: menuItemsWithOptions
+      };
+    });
+
+    return {
+      ...restaurant.toObject(),
+      menus: organizedMenus,
+      reviews
+    };
   }
 }

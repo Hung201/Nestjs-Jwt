@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { RestaurantsService } from './restaurants.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
+import { Public } from '@/auth/decorators/public.decorator';
 
 @Controller('restaurants')
 export class RestaurantsController {
@@ -24,6 +25,12 @@ export class RestaurantsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.restaurantsService.findOne(id);
+  }
+
+  @Public()
+  @Get(':id/details')
+  findOneWithDetails(@Param('id') id: string) {
+    return this.restaurantsService.findOneWithDetails(id);
   }
 
   @Patch()
