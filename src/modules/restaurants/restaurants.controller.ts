@@ -13,6 +13,7 @@ export class RestaurantsController {
     return this.restaurantsService.create(createRestaurantDto);
   }
 
+  @Public()
   @Get()
   findAll(
     @Query() query: string,

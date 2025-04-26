@@ -130,4 +130,57 @@ export class RestaurantsService {
       reviews
     };
   }
+
+  async findAllWithDetails() {
+    const restaurants = await this.restaurantModel.find({ isDeleted: { $ne: true } });
+
+    const result = await Promise.all(restaurants.map(async (restaurant) => {
+      const id = restaurant._id.toString();
+
+      // Get all menus for this restaurant
+      const menus = await this.menuModel.find({ restaurant_id: id, isDeleted: { $ne: true } });
+
+      // Get all menu items for these menus
+      const menuItems = await this.menuItemModel.find({
+        menu_id: { $in: menus.map(menu => menu._id) },
+        isDeleted: { $ne: true }
+      });
+
+      // Get all menu item options for these menu items
+      const menuItemOptions = await this.menuItemOptionModel.find({
+        menu_item_id: { $in: menuItems.map(item => item._id) },
+        isDeleted: { $ne: true }
+      });
+
+      // Get all reviews for this restaurant
+      const reviews = await this.reviewModel.find({
+        restaurant_id: id,
+        isDeleted: { $ne: true }
+      }).populate('user_id');
+
+      // Organize the data
+      const organizedMenus = menus.map(menu => {
+        const menuItemsForMenu = menuItems.filter(item => item.menu_id.toString() === menu._id.toString());
+        const menuItemsWithOptions = menuItemsForMenu.map(item => {
+          const options = menuItemOptions.filter(option => option.menu_item_id.toString() === item._id.toString());
+          return {
+            ...item.toObject(),
+            options
+          };
+        });
+        return {
+          ...menu.toObject(),
+          items: menuItemsWithOptions
+        };
+      });
+
+      return {
+        ...restaurant.toObject(),
+        menus: organizedMenus,
+        reviews
+      };
+    }));
+
+    return result;
+  }
 }
