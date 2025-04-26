@@ -74,11 +74,7 @@ export class RestaurantsService {
   }
 
   async remove(id: string): Promise<Restaurant> {
-    return await this.restaurantModel.findByIdAndUpdate(
-      id,
-      { isDeleted: true },
-      { new: true }
-    );
+    return await this.restaurantModel.findByIdAndDelete(id);
   }
 
   async findOneWithDetails(id: string) {
