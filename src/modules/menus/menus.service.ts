@@ -63,10 +63,6 @@ export class MenusService {
   }
 
   async remove(id: string): Promise<Menu> {
-    return await this.menuModel.findByIdAndUpdate(
-      id,
-      { isDeleted: true },
-      { new: true }
-    );
+    return await this.menuModel.findByIdAndDelete(id);
   }
 }
