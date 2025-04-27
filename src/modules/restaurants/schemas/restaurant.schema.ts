@@ -26,6 +26,9 @@ export class Restaurant {
     @Prop({ default: false })
     isDeleted: boolean;
 
+    @Prop()
+    image?: string;
+
     createdAt?: Date;
     updatedAt?: Date;
 }
