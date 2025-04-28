@@ -62,10 +62,6 @@ export class MenuItemsService {
     }
 
     async remove(id: string): Promise<MenuItem> {
-        return await this.menuItemModel.findByIdAndUpdate(
-            id,
-            { isDeleted: true },
-            { new: true }
-        );
+        return await this.menuItemModel.findByIdAndDelete(id);
     }
 } 

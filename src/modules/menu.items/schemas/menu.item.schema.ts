@@ -23,16 +23,8 @@ export class MenuItem {
     @Prop()
     image: string;
 
-    @Prop({ default: false })
-    isDeleted: boolean;
-
     createdAt?: Date;
     updatedAt?: Date;
 }
 
 export const MenuItemSchema = SchemaFactory.createForClass(MenuItem);
-
-MenuItemSchema.methods.softDelete = async function (): Promise<MenuItem> {
-    this.isDeleted = true;
-    return await this.save();
-};
