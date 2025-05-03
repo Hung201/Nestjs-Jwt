@@ -33,4 +33,8 @@ export class UpdateRestaurantDto {
 
     @IsOptional()
     image?: string;
+
+    @IsOptional()
+    @IsMongoId({ message: 'User ID không đúng định dạng' })
+    user_id?: string;
 }

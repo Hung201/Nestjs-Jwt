@@ -29,6 +29,9 @@ export class Restaurant {
     @Prop()
     image?: string;
 
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+    user_id: mongoose.Schema.Types.ObjectId;
+
     createdAt?: Date;
     updatedAt?: Date;
 }

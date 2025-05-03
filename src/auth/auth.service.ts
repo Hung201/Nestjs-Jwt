@@ -1,4 +1,3 @@
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '@/modules/users/users.service';
 import { comparePasswordHelper } from '@/helpers/util';
@@ -27,7 +26,8 @@ export class AuthService {
       user: {
         email: user.email,
         _id: user._id,
-        name: user.name
+        name: user.name,
+        role: user.role
       },
       access_token: this.jwtService.sign(payload),
     };

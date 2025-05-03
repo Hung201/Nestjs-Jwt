@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsNumber, Min, Max } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsNumber, Min, Max, IsMongoId } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateRestaurantDto {
@@ -25,4 +25,8 @@ export class CreateRestaurantDto {
 
     @IsOptional()
     image?: string;
+
+    @IsNotEmpty({ message: 'User ID không được để trống' })
+    @IsMongoId({ message: 'User ID không đúng định dạng' })
+    user_id: string;
 }
