@@ -5,6 +5,7 @@ import { Restaurant } from './schemas/restaurant.schema';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import aqp from 'api-query-params';
+import mongoose from 'mongoose';
 import { Menu } from '../menus/schemas/menu.schema';
 import { MenuItem } from '../menu.items/schemas/menu.item.schema';
 import { MenuItemOption } from '../menu.item.options/schemas/menu.item.option.schema';
@@ -25,56 +26,102 @@ export class RestaurantsService {
     private reviewModel: Model<Review>
   ) { }
 
-  async create(createRestaurantDto: CreateRestaurantDto): Promise<Restaurant> {
-    const restaurant = new this.restaurantModel(createRestaurantDto);
-    const savedRestaurant = await restaurant.save();
+  async create(createRestaurantDto: CreateRestaurantDto) {
+    const restaurant = await this.restaurantModel.create(createRestaurantDto);
     return {
-      ...savedRestaurant.toObject(),
-      createdAt: savedRestaurant.createdAt
+      _id: restaurant._id,
+      createdAt: restaurant.createdAt
     };
   }
 
   async findAll(query: string, current: number, pageSize: number) {
-    const { filter, sort } = aqp(query);
-    delete filter.current;
-    delete filter.pageSize;
+    try {
+      const { filter, sort } = aqp(query);
+      delete filter.current;
+      delete filter.pageSize;
 
-    const offset = (+current - 1) * +pageSize;
-    const defaultLimit = +pageSize ? +pageSize : 10;
+      // Log kỹ giá trị user_id để debug
+      console.log('DEBUG filter.user_id:', filter.user_id, typeof filter.user_id, Array.isArray(filter.user_id));
+      // Kiểm tra và chuyển đổi user_id thành ObjectId nếu có
+      if (filter.user_id) {
+        if (Array.isArray(filter.user_id)) {
+          filter.user_id = filter.user_id[0];
+        }
+        if (typeof filter.user_id === 'string') {
+          // Loại bỏ tất cả ký tự không phải hex
+          filter.user_id = filter.user_id.replace(/[^a-fA-F0-9]/g, '');
+        }
+        if (typeof filter.user_id === 'string' && /^[a-fA-F0-9]{24}$/.test(filter.user_id)) {
+          filter.user_id = new mongoose.Types.ObjectId(filter.user_id);
+        } else {
+          throw new BadRequestException('User ID không hợp lệ');
+        }
+      }
 
-    const totalItems = (await this.restaurantModel.find(filter)).length;
-    const totalPages = Math.ceil(totalItems / defaultLimit);
+      const offset = (+current - 1) * +pageSize;
+      const defaultLimit = +pageSize ? +pageSize : 10;
 
-    const result = await this.restaurantModel
-      .find(filter)
-      .skip(offset)
-      .limit(defaultLimit)
-      .sort(sort as any);
+      const totalItems = (await this.restaurantModel.find(filter)).length;
+      const totalPages = Math.ceil(totalItems / defaultLimit);
 
-    return {
-      meta: {
-        current: current,
-        pageSize: pageSize,
-        pages: totalPages,
-        total: totalItems
-      },
-      result
-    };
+      const result = await this.restaurantModel
+        .find(filter)
+        .skip(offset)
+        .limit(defaultLimit)
+        .sort(sort as any)
+        .populate('user_id');
+
+      return {
+        meta: {
+          current: current,
+          pageSize: pageSize,
+          pages: totalPages,
+          total: totalItems
+        },
+        result
+      };
+    } catch (error) {
+      if (error instanceof mongoose.Error.CastError) {
+        throw new BadRequestException('ID không hợp lệ');
+      }
+      throw error;
+    }
   }
 
   async findOne(id: string) {
-    return await this.restaurantModel.findById(id);
+    try {
+      return await this.restaurantModel.findById(id).populate('user_id');
+    } catch (error) {
+      if (error instanceof mongoose.Error.CastError) {
+        throw new BadRequestException('ID không hợp lệ');
+      }
+      throw error;
+    }
   }
 
   async update(updateRestaurantDto: UpdateRestaurantDto) {
-    return await this.restaurantModel.updateOne(
-      { _id: updateRestaurantDto._id },
-      { ...updateRestaurantDto }
-    );
+    try {
+      return await this.restaurantModel.updateOne(
+        { _id: updateRestaurantDto._id },
+        { ...updateRestaurantDto }
+      );
+    } catch (error) {
+      if (error instanceof mongoose.Error.CastError) {
+        throw new BadRequestException('ID không hợp lệ');
+      }
+      throw error;
+    }
   }
 
   async remove(id: string): Promise<Restaurant> {
-    return await this.restaurantModel.findByIdAndDelete(id);
+    try {
+      return await this.restaurantModel.findByIdAndDelete(id);
+    } catch (error) {
+      if (error instanceof mongoose.Error.CastError) {
+        throw new BadRequestException('ID không hợp lệ');
+      }
+      throw error;
+    }
   }
 
   async findOneWithDetails(id: string) {
