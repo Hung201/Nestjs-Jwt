@@ -14,7 +14,7 @@ export class MenuItem {
     @Prop({ required: true })
     title: string;
 
-    @Prop({ required: true })
+    @Prop()
     description: string;
 
     @Prop({ required: true })

@@ -40,8 +40,6 @@ export class RestaurantsService {
       delete filter.current;
       delete filter.pageSize;
 
-      // Log kỹ giá trị user_id để debug
-      console.log('DEBUG filter.user_id:', filter.user_id, typeof filter.user_id, Array.isArray(filter.user_id));
       // Kiểm tra và chuyển đổi user_id thành ObjectId nếu có
       if (filter.user_id) {
         if (Array.isArray(filter.user_id)) {
@@ -59,7 +57,7 @@ export class RestaurantsService {
       }
 
       const offset = (+current - 1) * +pageSize;
-      const defaultLimit = +pageSize ? +pageSize : 10;
+      const defaultLimit = +pageSize ? +pageSize : 8;
 
       const totalItems = (await this.restaurantModel.find(filter)).length;
       const totalPages = Math.ceil(totalItems / defaultLimit);
