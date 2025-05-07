@@ -38,7 +38,8 @@ export class OrdersService {
       .skip(offset)
       .limit(defaultLimit)
       .sort(sort as any)
-      .populate(['user_id', 'restaurant_id']);
+      .populate(['user_id', 'restaurant_id'])
+      .populate('items.menu_item_id');
 
     return {
       meta: {
@@ -53,7 +54,8 @@ export class OrdersService {
 
   async findOne(id: string) {
     return await this.orderModel.findById(id)
-      .populate(['user_id', 'restaurant_id']);
+      .populate(['user_id', 'restaurant_id'])
+      .populate('items.menu_item_id');
   }
 
   async update(updateOrderDto: UpdateOrderDto) {

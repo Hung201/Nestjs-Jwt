@@ -19,4 +19,7 @@ export class CreateUserDto {
 
     @IsOptional()
     image: string;
+
+    @IsNotEmpty({ message: "Role không được để trống" })
+    role: string;
 }

@@ -29,7 +29,7 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto) {
-    const { name, email, password, phone, address, image } = createUserDto;
+    const { name, email, password, phone, address, image, role } = createUserDto;
 
     //check email
     const isExist = await this.isEmailExist(email);
@@ -40,7 +40,7 @@ export class UsersService {
     //hash password
     const hashPassword = await hashPasswordHelper(password);
     const user = await this.userModel.create({
-      name, email, password: hashPassword, phone, address, image
+      name, email, password: hashPassword, phone, address, image, role
     })
     return {
       _id: user._id
@@ -103,7 +103,7 @@ export class UsersService {
   }
 
   async handleRegister(registerDto: CreateAuthDto) {
-    const { name, email, password } = registerDto;
+    const { name, email, password, phone, address, role } = registerDto;
 
     //check email
     const isExist = await this.isEmailExist(email);
@@ -115,11 +115,10 @@ export class UsersService {
     const hashPassword = await hashPasswordHelper(password);
     const codeId = uuidv4();
     const user = await this.userModel.create({
-      name, email, password: hashPassword,
+      name, email, password: hashPassword, phone, address, role,
       isActive: false,
       codeId: codeId,
       codeExpired: dayjs().add(5, 'minutes')
-      // codeExpired: dayjs().add(30, 'seconds')
     })
 
     //send email
@@ -136,7 +135,6 @@ export class UsersService {
     return {
       _id: user._id
     }
-
   }
 
   async handleActive(data: CodeAuthDto) {

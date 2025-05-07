@@ -18,4 +18,7 @@ export class UpdateUserDto {
 
     @IsOptional()
     image: string;
+
+    @IsNotEmpty({ message: "Role không được để trống" })
+    role: string;
 }

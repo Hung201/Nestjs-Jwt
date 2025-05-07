@@ -1,21 +1,89 @@
-import { IsMongoId, IsNotEmpty, IsNumber, IsOptional, Min, IsString, IsEnum } from 'class-validator';
+import {
+    IsMongoId, IsNotEmpty, IsNumber, IsOptional, Min, IsString, IsEnum, ValidateNested, IsArray
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+class ShippingInfoDto {
+    @IsNotEmpty()
+    @IsString()
+    full_name: string;
+
+    @IsNotEmpty()
+    @IsString()
+    phone: string;
+
+    @IsNotEmpty()
+    @IsString()
+    email: string;
+
+    @IsNotEmpty()
+    @IsString()
+    address: string;
+
+    @IsOptional()
+    @IsString()
+    note?: string;
+}
+
+class OrderItemDto {
+    @IsNotEmpty()
+    @IsMongoId()
+    menu_item_id: string;
+
+    @IsNotEmpty()
+    @IsString()
+    name: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    quantity: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    price: number;
+
+    @IsOptional()
+    @IsString()
+    option?: string;
+}
 
 export class CreateOrderDto {
-    @IsNotEmpty({ message: 'User ID không được để trống' })
-    @IsMongoId({ message: 'User ID không đúng định dạng' })
+    @IsNotEmpty()
+    @IsMongoId()
     user_id: string;
 
-    @IsNotEmpty({ message: 'Restaurant ID không được để trống' })
-    @IsMongoId({ message: 'Restaurant ID không đúng định dạng' })
+    @IsNotEmpty()
+    @IsMongoId()
     restaurant_id: string;
 
-    @IsNotEmpty({ message: 'Tổng tiền không được để trống' })
-    @IsNumber({}, { message: 'Tổng tiền phải là số' })
-    @Min(0, { message: 'Tổng tiền không được âm' })
+    @ValidateNested()
+    @Type(() => ShippingInfoDto)
+    shipping_info: ShippingInfoDto;
+
+    @IsNotEmpty()
+    @IsString()
+    @IsEnum(['COD', 'BANK_TRANSFER'])
+    payment_method: string;
+
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => OrderItemDto)
+    items: OrderItemDto[];
+
+    @IsNotEmpty()
+    @IsNumber()
     total_price: number;
 
+    @IsNotEmpty()
+    @IsNumber()
+    shipping_fee: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    total_amount: number;
+
+    @IsOptional()
     @IsString()
     @IsEnum(['ordered', 'on the way', 'delivered'])
-    @IsOptional()
-    status: string;
+    status?: string;
 }

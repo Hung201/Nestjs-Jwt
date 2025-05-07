@@ -6,8 +6,17 @@ export class CreateAuthDto {
     @IsNotEmpty({ message: "password không được để trống" })
     password: string;
 
-    @IsOptional()
+    @IsNotEmpty({ message: "name không được để trống" })
     name: string;
+
+    @IsNotEmpty({ message: "role không được để trống" })
+    role: string;
+
+    @IsNotEmpty({ message: "phone không được để trống" })
+    phone: string;
+
+    @IsNotEmpty({ message: "address không được để trống" })
+    address: string;
 }
 
 export class CodeAuthDto {
