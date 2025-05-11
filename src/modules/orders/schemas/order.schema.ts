@@ -32,7 +32,7 @@ export class Order {
         note?: string;
     };
 
-    @Prop({ type: String, enum: ['COD', 'BANK_TRANSFER'], required: true })
+    @Prop({ type: String, enum: ['COD', 'BANK_TRANSFER', 'momo'], required: true })
     payment_method: string;
 
     @Prop([

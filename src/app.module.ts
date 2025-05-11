@@ -3,6 +3,7 @@ import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
 import { UsersModule } from '@/modules/users/users.module';
 import { LikesModule } from '@/modules/likes/likes.module';
+import { PaymentModule } from '@/payment/payment.module';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -32,6 +33,7 @@ import { TransformInterceptor } from '@/core/transform.interceptor';
     RestaurantsModule,
     ReviewsModule,
     AuthModule,
+    PaymentModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

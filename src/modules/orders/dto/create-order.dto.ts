@@ -62,7 +62,7 @@ export class CreateOrderDto {
 
     @IsNotEmpty()
     @IsString()
-    @IsEnum(['COD', 'BANK_TRANSFER'])
+    @IsEnum(['COD', 'BANK_TRANSFER', 'momo'])
     payment_method: string;
 
     @IsArray()

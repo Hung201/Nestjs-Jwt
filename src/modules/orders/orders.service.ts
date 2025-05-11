@@ -66,10 +66,6 @@ export class OrdersService {
   }
 
   async remove(id: string): Promise<Order> {
-    return await this.orderModel.findByIdAndUpdate(
-      id,
-      { isDeleted: true },
-      { new: true }
-    );
+    return await this.orderModel.findByIdAndDelete(id);
   }
 }
